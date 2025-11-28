@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="enigma.vcxproj" Id="87427939-8867-45c5-b0f4-271b9ab3ff9b" />
+</Solution>

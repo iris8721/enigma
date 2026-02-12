@@ -5,6 +5,7 @@
 #include <array>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 constexpr int SCREEN_WIDTH = 1200;
 constexpr int SCREEN_HEIGHT = 800;
@@ -92,8 +93,9 @@ struct Rotor {
     }
 
     bool atNotch() const {
-        char posChar = 'A' + position;
-        return notches.find(posChar) != std::string::npos;
+        int corePosition = (position - ringSetting + 26) % 26;
+        char corePosChar = 'A' + corePosition;
+        return notches.find(corePosChar) != std::string::npos;
     }
 
     int forward(int input) const {
@@ -133,44 +135,55 @@ struct Plugboard {
     std::array<int, ALPHABET_SIZE> pairIndex;
     int numPairs = 0;
 
+    void rebuildPairIndices() {
+        pairIndex.fill(-1);
+        numPairs = 0;
+        for (int i = 0; i < ALPHABET_SIZE; i++) {
+            if (mapping[i] > i) {
+                pairIndex[i] = numPairs;
+                pairIndex[mapping[i]] = numPairs;
+                numPairs++;
+            }
+        }
+    }
+
     void init() {
         for (int i = 0; i < ALPHABET_SIZE; i++) {
             mapping[i] = i;
-            pairIndex[i] = -1;
         }
-        numPairs = 0;
+        rebuildPairIndices();
     }
 
     void setPair(int a, int b) {
+        if (a < 0 || a >= ALPHABET_SIZE || b < 0 || b >= ALPHABET_SIZE) return;
+        if (a == b) {
+            clearLetter(a);
+            return;
+        }
+
         int oldA = mapping[a];
         int oldB = mapping[b];
         if (oldA != a) {
-            pairIndex[oldA] = -1;
-            pairIndex[a] = -1;
             mapping[oldA] = oldA;
-            numPairs--;
+            mapping[a] = a;
         }
         if (oldB != b) {
-            pairIndex[oldB] = -1;
-            pairIndex[b] = -1;
             mapping[oldB] = oldB;
-            numPairs--;
+            mapping[b] = b;
         }
+
         mapping[a] = b;
         mapping[b] = a;
-        pairIndex[a] = numPairs;
-        pairIndex[b] = numPairs;
-        numPairs++;
+        rebuildPairIndices();
     }
 
     void clearLetter(int letter) {
+        if (letter < 0 || letter >= ALPHABET_SIZE) return;
         int paired = mapping[letter];
         if (paired != letter) {
-            pairIndex[paired] = -1;
-            pairIndex[letter] = -1;
             mapping[paired] = paired;
             mapping[letter] = letter;
-            numPairs--;
+            rebuildPairIndices();
         }
     }
 
@@ -303,6 +316,7 @@ struct AppState {
 
     std::string inputText;
     std::string outputText;
+    std::vector<std::vector<int>> rotorPositionHistory;
 
     int plugboardFirst = -1;
     int activeDropdown = -1;
@@ -648,7 +662,7 @@ void DrawSignalPath(const AppState& state, int x, int y, int width) {
 
         Color lineCol = (i <= reflectorStepIdx) ? Color{ 70, 140, 70, 255 } : Color{ 140, 70, 70, 255 };
 
-        if (abs(pos.y - prevPos.y) < 1.0f) {
+        if (std::fabs(pos.y - prevPos.y) < 1.0f) {
             float dir = (pos.x > prevPos.x) ? 1.0f : -1.0f;
             Vector2 lineStart = { prevPos.x + dir * circleRadius, prevPos.y };
             Vector2 lineEnd = { pos.x - dir * circleRadius, pos.y };
@@ -746,6 +760,7 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
             state.inputText.clear();
             state.outputText.clear();
             state.currentPath.clear();
+            state.rotorPositionHistory.clear();
         }
     }
 
@@ -910,6 +925,7 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
         state.inputText.clear();
         state.outputText.clear();
         state.currentPath.clear();
+        state.rotorPositionHistory.clear();
     }
 
     for (size_t i = 0; i < machine.rotors.size(); i++) {
@@ -928,13 +944,30 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
         DrawRectangleLinesEx(dropBg, 1, Color{ 60,60,70,255 });
 
         for (int j = 0; j < numOpts; j++) {
+            int candidateType = startOpt + j;
+            bool isDuplicate = false;
+            if (!(machine.type == MACHINE_M4 && i == 0)) {
+                for (size_t k = 0; k < machine.rotors.size(); k++) {
+                    if (k != i && machine.rotors[k].rotorType == candidateType) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+            }
+
             Rectangle opt = { (float)rx, (float)(rotorBtnY + 24 + j * 20), (float)rotorBtnW, 20 };
             bool optHover = CheckCollisionPointRec(GetMousePosition(), opt);
-            DrawRectangleRec(opt, optHover ? Color{ 60, 60, 70, 255 } : Color{ 42, 42, 52, 255 });
-            DrawTextF(ROTOR_NAMES[startOpt + j], rx + 5, rotorBtnY + 26 + j * 20, 11, WHITE);
+            Color optBg = isDuplicate ? Color{ 30, 30, 36, 255 } : (optHover ? Color{ 60, 60, 70, 255 } : Color{ 42, 42, 52, 255 });
+            Color optFg = isDuplicate ? Color{ 95, 95, 105, 255 } : WHITE;
+            DrawRectangleRec(opt, optBg);
+            DrawTextF(ROTOR_NAMES[candidateType], rx + 5, rotorBtnY + 26 + j * 20, 11, optFg);
 
-            if (optHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                machine.rotors[i].init(startOpt + j);
+            if (!isDuplicate && optHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                int oldPosition = machine.rotors[i].position;
+                int oldRingSetting = machine.rotors[i].ringSetting;
+                machine.rotors[i].init(candidateType);
+                machine.rotors[i].position = oldPosition;
+                machine.rotors[i].ringSetting = oldRingSetting;
                 state.activeDropdown = -1;
             }
         }
@@ -961,6 +994,13 @@ int main() {
             if (key >= 'a' && key <= 'z') key = key - 'a' + 'A';
             if (key >= 'A' && key <= 'Z' && !state.animating) {
                 int inputIdx = key - 'A';
+                std::vector<int> priorPositions;
+                priorPositions.reserve(state.machine.rotors.size());
+                for (const auto& r : state.machine.rotors) {
+                    priorPositions.push_back(r.position);
+                }
+                state.rotorPositionHistory.push_back(priorPositions);
+
                 int output = state.machine.encode(inputIdx, state.currentPath);
                 state.inputText += (char)key;
                 state.outputText += (char)('A' + output);
@@ -976,6 +1016,13 @@ int main() {
             state.outputText.pop_back();
             state.currentPath.clear();
             state.animating = false;
+            if (!state.rotorPositionHistory.empty()) {
+                const std::vector<int>& priorPositions = state.rotorPositionHistory.back();
+                for (size_t i = 0; i < state.machine.rotors.size() && i < priorPositions.size(); i++) {
+                    state.machine.rotors[i].position = priorPositions[i];
+                }
+                state.rotorPositionHistory.pop_back();
+            }
         }
 
         // plugboard interaction - coordinates must match DrawPlugboard

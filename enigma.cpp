@@ -757,6 +757,9 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
             state.outputText.clear();
             state.currentPath.clear();
             state.rotorPositionHistory.clear();
+            state.animating = false;
+            state.activeDropdown = -1;
+            state.plugboardFirst = -1;
         }
     }
 
@@ -922,6 +925,7 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
         state.outputText.clear();
         state.currentPath.clear();
         state.rotorPositionHistory.clear();
+        state.animating = false;
     }
 
     for (size_t i = 0; i < machine.rotors.size(); i++) {

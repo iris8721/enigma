@@ -32,11 +32,15 @@ Rotor wirings, notch positions, ring settings (Ringstellung), plugboard (Stecker
 
 ## Build
 
-Visual Studio project (`enigma.slnx` / `enigma.vcxproj`), C++20, toolset v145. Requires raylib headers and libs — the project assumes raylib is on the default include/library path (e.g. via vcpkg or `Microsoft.Cpp.user.props`); otherwise add its include/lib directories to the project and link `raylib.lib`.
+Windows: Visual Studio project (`enigma.slnx` / `enigma.vcxproj`), C++20, toolset v145. Requires raylib headers and libs — the project assumes raylib is on the default include/library path (e.g. via vcpkg or `Microsoft.Cpp.user.props`); otherwise add its include/lib directories to the project and link `raylib.lib`.
 
-`Roboto-Medium.ttf` must sit next to the executable at runtime (falls back to the default raylib font if missing).
+Linux, with raylib installed:
 
-Build unverified on this machine — no Windows/MSVC toolchain available.
+```
+g++ -std=c++20 enigma.cpp $(pkg-config --cflags --libs raylib) -o enigma
+```
+
+`Roboto-Medium.ttf` must sit next to the executable at runtime (falls back to the default raylib font if missing). The font is under the SIL Open Font License, see `OFL.txt`; everything else is MIT.
 
 ## Notes
 

@@ -6,6 +6,7 @@
 #include <cstring>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
 constexpr int SCREEN_WIDTH = 1200;
 constexpr int SCREEN_HEIGHT = 800;
@@ -977,9 +978,9 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "enigma machine");
     SetTargetFPS(60);
 
-    appFont = LoadFontEx("Roboto-Medium.ttf", 32, nullptr, 250);
-    if (appFont.texture.id == 0) appFont = GetFontDefault();
-    SetTextureFilter(appFont.texture, TEXTURE_FILTER_BILINEAR);
+    bool fontLoaded = FileExists("Roboto-Medium.ttf");
+    appFont = fontLoaded ? LoadFontEx("Roboto-Medium.ttf", 32, nullptr, 250) : GetFontDefault();
+    if (fontLoaded) SetTextureFilter(appFont.texture, TEXTURE_FILTER_BILINEAR);
 
     AppState state;
     state.machine.init(MACHINE_ENIGMA_I);
@@ -1091,7 +1092,7 @@ int main() {
         EndDrawing();
     }
 
-    UnloadFont(appFont);
+    if (fontLoaded) UnloadFont(appFont);
     CloseWindow();
     return 0;
 }

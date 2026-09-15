@@ -93,9 +93,7 @@ struct Rotor {
     }
 
     bool atNotch() const {
-        int corePosition = (position - ringSetting + 26) % 26;
-        char corePosChar = 'A' + corePosition;
-        return notches.find(corePosChar) != std::string::npos;
+        return notches.find((char)('A' + position)) != std::string::npos;
     }
 
     int forward(int input) const {
@@ -267,10 +265,8 @@ struct EnigmaMachine {
             rotors[middle].position = (rotors[middle].position + 1) % 26;
         }
 
-        if (middleAtNotch && slow >= 0) {
-            if (type != MACHINE_M4 || slow > 0) {
-                rotors[slow].position = (rotors[slow].position + 1) % 26;
-            }
+        if (middleAtNotch) {
+            rotors[slow].position = (rotors[slow].position + 1) % 26;
         }
     }
 

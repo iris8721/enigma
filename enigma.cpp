@@ -719,12 +719,7 @@ void DrawTextDisplay(const AppState& state, int x, int y, int width) {
 void DrawConfigPanel(AppState& state, int x, int y, int width) {
     EnigmaMachine& machine = state.machine;
 
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && state.activeDropdown > 0) {
-        Rectangle panelArea = { (float)x, (float)y, (float)width, 380 };
-        if (!CheckCollisionPointRec(GetMousePosition(), panelArea)) {
-            state.activeDropdown = -1;
-        }
-    }
+    int openDropdown = state.activeDropdown;
 
     DrawTextF("configuration", x, y, 14, GRAY);
     y += 22;
@@ -818,10 +813,10 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
         DrawTextF("+", rx + 11 - plusW / 2, innerY + 24, 12, WHITE);
         DrawTextF("-", rx + 37 - minusW / 2, innerY + 24, 12, WHITE);
 
-        if (upHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (upHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && openDropdown < 0) {
             machine.rotors[i].position = (machine.rotors[i].position + 1) % 26;
         }
-        if (downHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (downHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && openDropdown < 0) {
             machine.rotors[i].position = (machine.rotors[i].position + 25) % 26;
         }
     }
@@ -852,10 +847,10 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
         DrawTextF("+", rx + 11 - plusW / 2, innerY + 24, 12, WHITE);
         DrawTextF("-", rx + 37 - minusW / 2, innerY + 24, 12, WHITE);
 
-        if (upHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (upHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && openDropdown < 0) {
             machine.rotors[i].ringSetting = (machine.rotors[i].ringSetting + 1) % 26;
         }
-        if (downHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (downHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && openDropdown < 0) {
             machine.rotors[i].ringSetting = (machine.rotors[i].ringSetting + 25) % 26;
         }
     }
@@ -878,7 +873,7 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
         DrawRectangleLinesEx(btn, 1, selected ? Color{ 90,90,120,255 } : Color{ 55,55,65,255 });
         DrawTextF(REFLECTOR_NAMES[startRefl + i], innerX + i * 78 + 5, innerY + 5, 11, WHITE);
 
-        if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (hover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && openDropdown < 0) {
             machine.reflector.init(startRefl + i);
         }
     }
@@ -970,6 +965,10 @@ void DrawConfigPanel(AppState& state, int x, int y, int width) {
                 machine.rotors[i].ringSetting = oldRingSetting;
                 state.activeDropdown = -1;
             }
+        }
+
+        if (openDropdown == (int)(i + 1) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !CheckCollisionPointRec(GetMousePosition(), dropBg)) {
+            state.activeDropdown = -1;
         }
     }
 }

@@ -991,7 +991,7 @@ int main() {
         int key = GetCharPressed();
         while (key > 0) {
             if (key >= 'a' && key <= 'z') key = key - 'a' + 'A';
-            if (key >= 'A' && key <= 'Z' && !state.animating) {
+            if (key >= 'A' && key <= 'Z') {
                 int inputIdx = key - 'A';
                 std::vector<int> priorPositions;
                 priorPositions.reserve(state.machine.rotors.size());
